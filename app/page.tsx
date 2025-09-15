@@ -32,7 +32,12 @@ import { Fragment, useState, useEffect } from "react";
 import { useChat } from "@ai-sdk/react";
 import { useSession } from "next-auth/react";
 import { Response } from "@/components/ai-elements/response";
-import { CopyIcon, GlobeIcon } from "lucide-react";
+import {
+  CopyIcon,
+  GlobeIcon,
+  BookOpenIcon,
+  FlaskConicalIcon,
+} from "lucide-react";
 import {
   Source,
   Sources,
@@ -44,9 +49,12 @@ import {
   ReasoningContent,
   ReasoningTrigger,
 } from "@/components/ai-elements/reasoning";
+import { Citations, CitationSummary } from "@/components/ai-elements/citations";
 import { Loader } from "@/components/ai-elements/loader";
 import { AuthButton } from "@/components/auth-button";
 import { ConversationSidebar } from "@/components/conversation-sidebar";
+import { Button } from "@/components/ui/button";
+import { ResearchPaper } from "@/types/research";
 import { nanoid } from "nanoid";
 
 const models = [
@@ -65,6 +73,10 @@ const ChatBotDemo = () => {
   const [input, setInput] = useState("");
   const [model, setModel] = useState<string>(models[0].value);
   const [currentConversationId, setCurrentConversationId] = useState<string>();
+  const [enableResearch, setEnableResearch] = useState<boolean>(false);
+  const [numPapers, setNumPapers] = useState<number>(5);
+  const [researchPapers, setResearchPapers] = useState<ResearchPaper[]>([]);
+  const [isLoadingResearch, setIsLoadingResearch] = useState<boolean>(false);
   const { messages, sendMessage, status, setMessages } = useChat();
 
   console.log(session);
@@ -102,6 +114,8 @@ const ChatBotDemo = () => {
     setMessages([]);
     setCurrentConversationId(nanoid());
     setInput("");
+    setResearchPapers([]);
+    setIsLoadingResearch(false);
   };
 
   // Initialize with a new conversation ID on first load
@@ -111,7 +125,7 @@ const ChatBotDemo = () => {
     }
   }, [currentConversationId]);
 
-  const handleSubmit = (message: PromptInputMessage) => {
+  const handleSubmit = async (message: PromptInputMessage) => {
     const hasText = Boolean(message.text);
     const hasAttachments = Boolean(message.files?.length);
 
@@ -119,6 +133,14 @@ const ChatBotDemo = () => {
       return;
     }
 
+    // Clear input immediately to provide instant feedback
+    setInput("");
+
+    // Clear previous research papers and set loading state
+    setResearchPapers([]);
+    setIsLoadingResearch(false);
+
+    // Send the message to the chat immediately
     sendMessage(
       {
         text: message.text || "Sent with attachments",
@@ -128,10 +150,37 @@ const ChatBotDemo = () => {
         body: {
           model: model,
           conversationId: currentConversationId,
+          enableResearch,
+          numPapers,
         },
       }
     );
-    setInput("");
+
+    // If research mode is enabled and we have text, fetch research papers
+    if (enableResearch && message.text) {
+      setIsLoadingResearch(true);
+      try {
+        const researchResponse = await fetch("/api/research", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            query: message.text,
+            numPapers,
+          }),
+        });
+
+        if (researchResponse.ok) {
+          const researchData = await researchResponse.json();
+          setResearchPapers(researchData.papers || []);
+        }
+      } catch (error) {
+        console.error("Error fetching research papers:", error);
+      } finally {
+        setIsLoadingResearch(false);
+      }
+    }
   };
 
   // Show loading while checking authentication
@@ -141,7 +190,7 @@ const ChatBotDemo = () => {
         <div className="flex-1 flex flex-col">
           {/* Header with Authentication */}
           <div className="flex justify-between items-center p-6 border-b">
-            <h1 className="text-2xl font-semibold">AI Chatbot</h1>
+            <h1 className="text-2xl font-semibold">Re Agent</h1>
             <AuthButton />
           </div>
           <div className="flex-1 flex items-center justify-center">
@@ -162,12 +211,12 @@ const ChatBotDemo = () => {
         <div className="flex-1 flex flex-col">
           {/* Header with Authentication */}
           <div className="flex justify-between items-center p-6 border-b">
-            <h1 className="text-2xl font-semibold">AI Chatbot</h1>
+            <h1 className="text-2xl font-semibold">Re Agent</h1>
             <AuthButton />
           </div>
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center space-y-4 max-w-md flex flex-col items-center">
-              <h2 className="text-xl font-medium">Welcome to AI Chatbot</h2>
+              <h2 className="text-xl font-medium">Welcome to Re Agent</h2>
               <p className="text-muted-foreground">
                 Please sign in to start chatting with our AI assistant. You'll
                 have access to advanced AI models, web search capabilities, and
@@ -195,7 +244,7 @@ const ChatBotDemo = () => {
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header with Authentication */}
         <div className="flex justify-between items-center p-6 border-b">
-          <h1 className="text-2xl font-semibold">AI Chatbot</h1>
+          <h1 className="text-2xl font-semibold">Re Agent</h1>
           <AuthButton />
         </div>
 
@@ -281,6 +330,24 @@ const ChatBotDemo = () => {
                   })}
                 </div>
               ))}
+
+              {/* Display Research Citations */}
+              {(isLoadingResearch || researchPapers.length > 0) && (
+                <div className="mt-6 space-y-4">
+                  {isLoadingResearch ? (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground p-3 bg-muted/30 rounded-lg border">
+                      <Loader />
+                      <span>Searching research papers...</span>
+                    </div>
+                  ) : (
+                    <>
+                      <CitationSummary papers={researchPapers} />
+                      <Citations papers={researchPapers} />
+                    </>
+                  )}
+                </div>
+              )}
+
               {status === "submitted" && <Loader />}
             </ConversationContent>
             <ConversationScrollButton />
@@ -299,6 +366,14 @@ const ChatBotDemo = () => {
               <PromptInputTextarea
                 onChange={(e) => setInput(e.target.value)}
                 value={input}
+                disabled={status === "streaming" || status === "submitted"}
+                placeholder={
+                  status === "streaming" || status === "submitted"
+                    ? "Processing your message..."
+                    : enableResearch
+                    ? "Ask a question to get research-backed answers..."
+                    : "Type your message..."
+                }
               />
             </PromptInputBody>
             <PromptInputToolbar>
@@ -308,6 +383,7 @@ const ChatBotDemo = () => {
                     setModel(value);
                   }}
                   value={model}
+                  disabled={status === "streaming" || status === "submitted"}
                 >
                   <PromptInputModelSelectTrigger>
                     <PromptInputModelSelectValue />
@@ -323,8 +399,25 @@ const ChatBotDemo = () => {
                     ))}
                   </PromptInputModelSelectContent>
                 </PromptInputModelSelect>
+
+                {/* Research Mode Toggle */}
+                <Button
+                  variant={enableResearch ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setEnableResearch(!enableResearch)}
+                  disabled={status === "streaming" || status === "submitted"}
+                  className="flex items-center gap-1"
+                >
+                  <FlaskConicalIcon className="h-3 w-3" />
+                  Research
+                </Button>
               </PromptInputTools>
-              <PromptInputSubmit disabled={!input && !status} status={status} />
+              <PromptInputSubmit
+                disabled={
+                  !input || status === "streaming" || status === "submitted"
+                }
+                status={status}
+              />
             </PromptInputToolbar>
           </PromptInput>
         </div>
