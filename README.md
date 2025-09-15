@@ -5,6 +5,7 @@ A modern AI chatbot built with Next.js, featuring conversational AI, semantic se
 ## Features
 
 - 🤖 AI conversations powered by Google Generative AI
+- 🧠 **Contextual Memory**: AI remembers important details from previous conversations
 - 🔍 Semantic search through conversation history with Pinecone
 - 🔐 Google OAuth authentication with NextAuth
 - 💾 Conversation persistence with Prisma
@@ -58,6 +59,10 @@ PINECONE_INDEX="your-pinecone-index-name"
 
 # Optional: Google Search integration
 GOOGLE_SEARCH_ENGINE_ID="your-search-engine-id"
+
+# Optional: Conversation Context Settings
+ENABLE_CONVERSATION_CONTEXT="true"  # Enable contextual memory (default: true)
+MAX_CONTEXT_TOKENS="1500"           # Max tokens for context (default: 1500)
 ```
 
 ### 3. API Keys Setup

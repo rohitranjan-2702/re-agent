@@ -253,3 +253,145 @@ export async function getConversation(conversationId: string, userId: string) {
     },
   });
 }
+
+// Retrieve relevant conversation context for the current chat
+export async function getConversationContext({
+  currentMessages,
+  userId,
+  currentConversationId,
+  maxContextTokens = 1500, // Roughly 1000-1500 tokens for context
+}: {
+  currentMessages: Array<{ role: string; content: string }>;
+  userId: string;
+  currentConversationId?: string;
+  maxContextTokens?: number;
+}) {
+  try {
+    // Get the last user message to use as search query
+    const lastUserMessage = currentMessages
+      .filter((msg) => msg.role === "user")
+      .pop();
+
+    if (!lastUserMessage?.content) {
+      return null;
+    }
+
+    // Search for relevant previous conversations
+    const searchResults = await searchConversations({
+      query: lastUserMessage.content,
+      userId,
+      topK: 5, // Get top 5 relevant conversations
+    });
+
+    if (!searchResults || searchResults.length === 0) {
+      return null;
+    }
+
+    // Filter out current conversation if it exists
+    const relevantResults = searchResults.filter(
+      (result) => result.conversationId !== currentConversationId
+    );
+
+    if (relevantResults.length === 0) {
+      return null;
+    }
+
+    // Get detailed conversation data for the most relevant results
+    const contextConversations = [];
+    let totalTokenCount = 0;
+
+    for (const result of relevantResults.slice(0, 3)) {
+      // Limit to top 3 conversations
+      const conversation = await getConversation(result.conversationId, userId);
+
+      if (conversation && conversation.messages) {
+        // Estimate token count (rough approximation: 1 token ≈ 4 characters)
+        const conversationText = JSON.stringify(conversation.messages);
+        const estimatedTokens = Math.ceil(conversationText.length / 4);
+
+        if (totalTokenCount + estimatedTokens <= maxContextTokens) {
+          contextConversations.push({
+            id: conversation.id,
+            title: conversation.title || "Untitled Conversation",
+            messages: Array.isArray(conversation.messages)
+              ? conversation.messages
+              : [],
+            relevanceScore: result.maxScore || 0,
+            timestamp: conversation.updatedAt,
+          });
+          totalTokenCount += estimatedTokens;
+        } else {
+          // If adding this conversation would exceed token limit, stop
+          break;
+        }
+      }
+    }
+
+    return contextConversations.length > 0
+      ? {
+          conversations: contextConversations,
+          totalEstimatedTokens: totalTokenCount,
+        }
+      : null;
+  } catch (error) {
+    console.error("Error retrieving conversation context:", error);
+    return null;
+  }
+}
+
+// Format conversation context for system prompt
+export function formatContextForPrompt(
+  context: {
+    conversations: Array<{
+      id: string;
+      title: string;
+      messages: any[];
+      relevanceScore: number;
+      timestamp: Date;
+    }>;
+    totalEstimatedTokens: number;
+  } | null
+): string {
+  if (!context || context.conversations.length === 0) {
+    return "";
+  }
+
+  let contextPrompt = "\n\n## RELEVANT CONVERSATION HISTORY\n";
+  contextPrompt +=
+    "Here are some relevant details from your previous conversations with this user:\n\n";
+
+  context.conversations.forEach((conv, index) => {
+    contextPrompt += `### Previous Conversation ${index + 1}: "${
+      conv.title
+    }"\n`;
+    contextPrompt += `Relevance Score: ${conv.relevanceScore.toFixed(
+      2
+    )} | Date: ${conv.timestamp.toLocaleDateString()}\n`;
+
+    // Include key messages from the conversation
+    const messages = Array.isArray(conv.messages) ? conv.messages : [];
+    const importantMessages = messages
+      .filter((msg: any) => msg.role === "user" || msg.role === "assistant")
+      .slice(-4); // Last 4 messages to keep context manageable
+
+    importantMessages.forEach((msg: any) => {
+      const role = msg.role === "user" ? "User" : "Assistant";
+      const content =
+        typeof msg.content === "string"
+          ? msg.content.substring(0, 200) // Truncate long messages
+          : JSON.stringify(msg.content).substring(0, 200);
+
+      contextPrompt += `**${role}**: ${content}${
+        content.length >= 200 ? "..." : ""
+      }\n`;
+    });
+
+    contextPrompt += "\n";
+  });
+
+  contextPrompt += "---\n";
+  contextPrompt +=
+    "Use this context to provide more personalized and informed responses. Reference previous discussions when relevant, but don't mention this context explicitly unless directly asked about previous conversations.\n";
+
+  return contextPrompt;
+}
