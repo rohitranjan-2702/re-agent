@@ -1,4 +1,5 @@
 import { ResearchPaper, PaperSearchParams } from "@/types/research";
+import { semanticScholarRateLimiter } from "./rate-limiter";
 
 const SEMANTIC_SCHOLAR_API_BASE = "https://api.semanticscholar.org/graph/v1";
 
@@ -17,6 +18,9 @@ export async function searchResearchPapers({
   next?: number;
 }> {
   try {
+    // Apply rate limiting before making the API call
+    await semanticScholarRateLimiter.waitIfNeeded();
+
     const params = new URLSearchParams({
       query,
       limit: limit.toString(),
@@ -44,6 +48,7 @@ export async function searchResearchPapers({
     if (minCitationCount)
       params.append("minCitationCount", minCitationCount.toString());
 
+    console.log(`🔍 Searching Semantic Scholar for: "${query}"`);
     const response = await fetch(
       `${SEMANTIC_SCHOLAR_API_BASE}/paper/search?${params}`,
       {
@@ -54,6 +59,11 @@ export async function searchResearchPapers({
     );
 
     if (!response.ok) {
+      if (response.status === 429) {
+        console.warn("Rate limit exceeded, API returned 429");
+        // The rate limiter should have prevented this, but handle it just in case
+        throw new Error("Rate limit exceeded. Please try again in a moment.");
+      }
       throw new Error(
         `Semantic Scholar API error: ${response.status} ${response.statusText}`
       );
@@ -94,6 +104,10 @@ export async function getPaperDetails(
   paperId: string
 ): Promise<ResearchPaper | null> {
   try {
+    // Apply rate limiting before making the API call
+    await semanticScholarRateLimiter.waitIfNeeded();
+
+    console.log(`📄 Fetching paper details for: ${paperId}`);
     const response = await fetch(
       `${SEMANTIC_SCHOLAR_API_BASE}/paper/${paperId}?fields=paperId,title,abstract,year,authors,venue,citationCount,url,externalIds,s2FieldsOfStudy`,
       {
@@ -105,6 +119,10 @@ export async function getPaperDetails(
 
     if (!response.ok) {
       if (response.status === 404) return null;
+      if (response.status === 429) {
+        console.warn("Rate limit exceeded, API returned 429");
+        throw new Error("Rate limit exceeded. Please try again in a moment.");
+      }
       throw new Error(
         `Semantic Scholar API error: ${response.status} ${response.statusText}`
       );
@@ -198,6 +216,27 @@ export function rankPapersByRelevance(
       return { ...paper, relevanceScore };
     })
     .sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0));
+}
+
+// Batch fetch multiple paper details with rate limiting
+export async function batchGetPaperDetails(
+  paperIds: string[]
+): Promise<(ResearchPaper | null)[]> {
+  const results: (ResearchPaper | null)[] = [];
+
+  console.log(`📚 Batch fetching ${paperIds.length} paper details...`);
+
+  for (const paperId of paperIds) {
+    try {
+      const paper = await getPaperDetails(paperId);
+      results.push(paper);
+    } catch (error) {
+      console.error(`Error fetching paper ${paperId}:`, error);
+      results.push(null);
+    }
+  }
+
+  return results;
 }
 
 // Extract key information from papers for AI context

@@ -82,6 +82,21 @@ User Question: ${query}`;
     return Response.json(response);
   } catch (error) {
     console.error("Error in research API:", error);
+
+    // Handle rate limiting errors specifically
+    if (
+      error instanceof Error &&
+      error.message.includes("Rate limit exceeded")
+    ) {
+      return Response.json(
+        {
+          error:
+            "Research service is temporarily busy. Please try again in a moment.",
+        },
+        { status: 429 }
+      );
+    }
+
     return Response.json(
       { error: "Failed to search research papers" },
       { status: 500 }

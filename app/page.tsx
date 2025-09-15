@@ -32,6 +32,7 @@ import { Fragment, useState, useEffect } from "react";
 import { useChat } from "@ai-sdk/react";
 import { useSession } from "next-auth/react";
 import { Response } from "@/components/ai-elements/response";
+import { ResponseWithCitations } from "@/components/ai-elements/response-with-citations";
 import {
   CopyIcon,
   GlobeIcon,
@@ -49,6 +50,7 @@ import {
   ReasoningContent,
   ReasoningTrigger,
 } from "@/components/ai-elements/reasoning";
+import { ReasoningContentWithCitations } from "@/components/ai-elements/reasoning-with-citations";
 import { Citations, CitationSummary } from "@/components/ai-elements/citations";
 import { Loader } from "@/components/ai-elements/loader";
 import { AuthButton } from "@/components/auth-button";
@@ -174,9 +176,16 @@ const ChatBotDemo = () => {
         if (researchResponse.ok) {
           const researchData = await researchResponse.json();
           setResearchPapers(researchData.papers || []);
+        } else if (researchResponse.status === 429) {
+          // Handle rate limiting
+          console.warn("Research service rate limited");
+          // Could add a toast notification here
+        } else {
+          console.error("Research API error:", researchResponse.status);
         }
       } catch (error) {
         console.error("Error fetching research papers:", error);
+        // Could add user-facing error notification here
       } finally {
         setIsLoadingResearch(false);
       }
@@ -284,7 +293,15 @@ const ChatBotDemo = () => {
                           <Fragment key={`${message.id}-${i}`}>
                             <Message from={message.role}>
                               <MessageContent>
-                                <Response>{part.text}</Response>
+                                {message.role === "assistant" ? (
+                                  <ResponseWithCitations
+                                    papers={researchPapers}
+                                  >
+                                    {part.text}
+                                  </ResponseWithCitations>
+                                ) : (
+                                  <Response>{part.text}</Response>
+                                )}
                               </MessageContent>
                             </Message>
                             {message.role === "assistant" &&
@@ -321,7 +338,11 @@ const ChatBotDemo = () => {
                             }
                           >
                             <ReasoningTrigger />
-                            <ReasoningContent>{part.text}</ReasoningContent>
+                            <ReasoningContentWithCitations
+                              papers={researchPapers}
+                            >
+                              {part.text}
+                            </ReasoningContentWithCitations>
                           </Reasoning>
                         );
                       default:
