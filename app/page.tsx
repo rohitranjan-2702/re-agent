@@ -64,7 +64,6 @@ const ChatBotDemo = () => {
   const { data: session, status: sessionStatus } = useSession();
   const [input, setInput] = useState("");
   const [model, setModel] = useState<string>(models[0].value);
-  const [webSearch, setWebSearch] = useState(false);
   const [currentConversationId, setCurrentConversationId] = useState<string>();
   const { messages, sendMessage, status, setMessages } = useChat();
 
@@ -128,7 +127,6 @@ const ChatBotDemo = () => {
       {
         body: {
           model: model,
-          webSearch: webSearch,
           conversationId: currentConversationId,
         },
       }
@@ -168,7 +166,7 @@ const ChatBotDemo = () => {
             <AuthButton />
           </div>
           <div className="flex-1 flex items-center justify-center">
-            <div className="text-center space-y-4 max-w-md">
+            <div className="text-center space-y-4 max-w-md flex flex-col items-center">
               <h2 className="text-xl font-medium">Welcome to AI Chatbot</h2>
               <p className="text-muted-foreground">
                 Please sign in to start chatting with our AI assistant. You'll
@@ -305,19 +303,6 @@ const ChatBotDemo = () => {
             </PromptInputBody>
             <PromptInputToolbar>
               <PromptInputTools>
-                <PromptInputActionMenu>
-                  <PromptInputActionMenuTrigger />
-                  <PromptInputActionMenuContent>
-                    <PromptInputActionAddAttachments />
-                  </PromptInputActionMenuContent>
-                </PromptInputActionMenu>
-                <PromptInputButton
-                  variant={webSearch ? "default" : "ghost"}
-                  onClick={() => setWebSearch(!webSearch)}
-                >
-                  <GlobeIcon size={16} />
-                  <span>Search</span>
-                </PromptInputButton>
                 <PromptInputModelSelect
                   onValueChange={(value) => {
                     setModel(value);

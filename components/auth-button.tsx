@@ -27,7 +27,10 @@ export function AuthButton() {
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+          <Button
+            variant="ghost"
+            className="relative h-8 w-8 rounded-full cursor-pointer"
+          >
             <Avatar className="h-8 w-8">
               <AvatarImage
                 src={session.user.image || ""}
@@ -81,7 +84,7 @@ export function AuthButton() {
       variant="default"
       size="sm"
       onClick={() => signIn("google")}
-      className="flex items-center gap-2"
+      className="flex items-center gap-2 cursor-pointer"
     >
       <LogInIcon className="h-4 w-4" />
       Sign in
