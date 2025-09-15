@@ -1,36 +1,129 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI Chatbot
 
-## Getting Started
+A modern AI chatbot built with Next.js, featuring conversational AI, semantic search, and user authentication.
 
-First, run the development server:
+## Features
+
+- 🤖 AI conversations powered by Google Generative AI
+- 🔍 Semantic search through conversation history with Pinecone
+- 🔐 Google OAuth authentication with NextAuth
+- 💾 Conversation persistence with Prisma
+- 🎨 Modern UI built with Tailwind CSS and Radix UI
+
+## Local Setup
+
+### Prerequisites
+
+- Node.js 18+ and pnpm
+- A PostgreSQL database (local or cloud)
+- Google Cloud Platform account for AI and OAuth
+- Pinecone account (optional, for semantic search)
+
+### 1. Clone and Install
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <your-repo-url>
+cd ai-chatbot
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Environment Setup
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Copy the example environment file and configure:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+cp env.example .env.local
+```
 
-## Learn More
+Update `.env.local` with your credentials:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+# Required: Google Generative AI for chat
+GOOGLE_GENERATIVE_AI_API_KEY="your-google-ai-api-key"
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Required: NextAuth configuration
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="your-random-secret-key"
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Required: Google OAuth credentials
+GOOGLE_CLIENT_ID="your-google-client-id"
+GOOGLE_CLIENT_SECRET="your-google-client-secret"
 
-## Deploy on Vercel
+# Required: Database connection
+DATABASE_URL="postgresql://user:password@localhost:5432/ai-chatbot"
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+# Optional: Pinecone for semantic search (if not set, uses basic text search)
+PINECONE_API_KEY="your-pinecone-api-key"
+PINECONE_INDEX="your-pinecone-index-name"
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# Optional: Google Search integration
+GOOGLE_SEARCH_ENGINE_ID="your-search-engine-id"
+```
+
+### 3. API Keys Setup
+
+#### Google AI API Key
+
+1. Go to [Google AI Studio](https://aistudio.google.com)
+2. Create an API key for Gemini
+
+#### Google OAuth Setup
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com)
+2. Create a new project or select existing
+3. Enable Google+ API
+4. Create OAuth 2.0 credentials
+5. Add `http://localhost:3000/api/auth/callback/google` to authorized redirect URIs
+
+#### Pinecone Setup (Optional)
+
+1. Sign up at [Pinecone](https://pinecone.io)
+2. Create a new index with dimension 768
+3. Copy your API key and index name
+
+### 4. Database Setup
+
+```bash
+# Generate Prisma client
+pnpm db:generate
+
+# Run database migrations
+pnpm db:migrate
+
+# (Optional) Open Prisma Studio to view data
+pnpm db:studio
+```
+
+### 5. Run Development Server
+
+```bash
+pnpm dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) to see the application.
+
+## Scripts
+
+- `pnpm dev` - Start development server with Turbopack
+- `pnpm build` - Build for production
+- `pnpm start` - Start production server
+- `pnpm lint` - Run ESLint
+- `pnpm db:migrate` - Run database migrations
+- `pnpm db:studio` - Open Prisma Studio
+- `pnpm db:push` - Push schema changes to database
+
+## Architecture
+
+- **Frontend**: Next.js 15 with React 19
+- **Styling**: Tailwind CSS with Radix UI components
+- **Authentication**: NextAuth.js with Google OAuth
+- **Database**: PostgreSQL with Prisma ORM
+- **AI**: Google Generative AI (Gemini)
+- **Search**: Pinecone for semantic search (with fallback to text search)
+- **Real-time**: Server-sent events for streaming responses
+
+## Notes
+
+- Pinecone is optional - the app will gracefully fall back to basic text search if not configured
+- Make sure your database is running before starting the development server
+- The app uses Turbopack for faster development builds
