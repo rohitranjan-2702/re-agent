@@ -118,22 +118,27 @@ export function ConversationSidebar({
   }, [searchQuery, session?.user]);
 
   // Filter conversations based on search query (fallback for non-semantic search)
-  const filteredConversations = conversations.filter((conv) =>
+  const filteredConversations = conversations.filter((conv: Conversation) =>
     conv.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // Display search results or regular conversations
   const displayConversations =
     searchQuery.trim() && searchResults.length > 0
-      ? searchResults.map((result) => ({
-          id: result.conversationId,
-          title:
-            `Search Result: ${result.matches[0]?.content?.slice(0, 50)}...` ||
-            "Untitled",
-          model: "Search Result",
-          createdAt: result.matches[0]?.timestamp || new Date().toISOString(),
-          updatedAt: result.matches[0]?.timestamp || new Date().toISOString(),
-        }))
+      ? searchResults.map(
+          (result: {
+            conversationId: string;
+            matches: { content: string; timestamp: string }[];
+          }) => ({
+            id: result.conversationId,
+            title:
+              `Search Result: ${result.matches[0]?.content?.slice(0, 50)}...` ||
+              "Untitled",
+            model: "Search Result",
+            createdAt: result.matches[0]?.timestamp || new Date().toISOString(),
+            updatedAt: result.matches[0]?.timestamp || new Date().toISOString(),
+          })
+        )
       : filteredConversations;
 
   // Group conversations by date
@@ -145,7 +150,7 @@ export function ConversationSidebar({
     const weekAgo = new Date(today);
     weekAgo.setDate(weekAgo.getDate() - 7);
 
-    conversations.forEach((conv) => {
+    conversations.forEach((conv: Conversation) => {
       const convDate = new Date(conv.updatedAt);
       let group = "";
 
@@ -243,7 +248,7 @@ export function ConversationSidebar({
                   </div>
                 </CollapsibleTrigger>
                 <CollapsibleContent className="space-y-1">
-                  {convs.map((conversation) => (
+                  {convs.map((conversation: Conversation) => (
                     <Button
                       key={conversation.id}
                       variant={

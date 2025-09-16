@@ -186,11 +186,13 @@ export function formatAuthors(
   if (!authors || authors.length === 0) return "Unknown Authors";
 
   if (authors.length <= maxAuthors) {
-    return authors.map((author) => author.name).join(", ");
+    return authors.map((author: { name: string }) => author.name).join(", ");
   }
 
   const firstAuthors = authors.slice(0, maxAuthors);
-  return `${firstAuthors.map((author) => author.name).join(", ")} et al.`;
+  return `${firstAuthors
+    .map((author: { name: string }) => author.name)
+    .join(", ")} et al.`;
 }
 
 // Generate APA citation format
@@ -216,13 +218,13 @@ export function rankPapersByRelevance(
   const queryTerms = query.toLowerCase().split(/\s+/);
 
   return papers
-    .map((paper) => {
+    .map((paper: ResearchPaper) => {
       let relevanceScore = 0;
       const titleLower = paper.title.toLowerCase();
       const abstractLower = (paper.abstract || "").toLowerCase();
 
       // Title relevance (higher weight)
-      queryTerms.forEach((term) => {
+      queryTerms.forEach((term: string) => {
         if (titleLower.includes(term)) relevanceScore += 3;
         if (abstractLower.includes(term)) relevanceScore += 1;
       });

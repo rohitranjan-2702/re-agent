@@ -24,7 +24,7 @@ import {
 } from "@/components/ai-elements/prompt-input";
 import { Actions, Action } from "@/components/ai-elements/actions";
 import { Fragment, useState, useEffect } from "react";
-import { useChat } from "@ai-sdk/react";
+import { UIMessage, useChat } from "@ai-sdk/react";
 import { useSession } from "next-auth/react";
 import { Response } from "@/components/ai-elements/response";
 import { ResponseWithCitations } from "@/components/ai-elements/response-with-citations";
@@ -249,16 +249,18 @@ const ChatBotDemo = () => {
         <div className="flex-1 flex flex-col p-6">
           <Conversation className="h-full">
             <ConversationContent>
-              {messages.map((message) => (
+              {messages.map((message: UIMessage) => (
                 <div key={message.id}>
                   {message.role === "assistant" &&
-                    message.parts.filter((part) => part.type === "source-url")
-                      .length > 0 && (
+                    message.parts.filter(
+                      (part: { type: string }) => part.type === "source-url"
+                    ).length > 0 && (
                       <Sources>
                         <SourcesTrigger
                           count={
                             message.parts.filter(
-                              (part) => part.type === "source-url"
+                              (part: { type: string }) =>
+                                part.type === "source-url"
                             ).length
                           }
                         />

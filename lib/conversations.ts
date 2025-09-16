@@ -1,3 +1,4 @@
+import { Conversation } from "@prisma/client";
 import { pineconeIndex, isPineconeAvailable } from "./pinecone";
 import { prisma } from "./prisma";
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -146,19 +147,21 @@ export async function searchConversations({
       });
 
       // Transform to match expected format
-      return conversations.map((conv) => ({
-        conversationId: conv.id,
-        matches: [
-          {
-            score: 0.8, // Default score for text search
-            role: "system",
-            content: conv.title,
-            messageIndex: 0,
-            timestamp: conv.updatedAt.toISOString(),
-          },
-        ],
-        maxScore: 0.8,
-      }));
+      return conversations.map(
+        (conv: { id: string; title: string | null; updatedAt: Date }) => ({
+          conversationId: conv.id,
+          matches: [
+            {
+              score: 0.8, // Default score for text search
+              role: "system",
+              content: conv.title,
+              messageIndex: 0,
+              timestamp: conv.updatedAt.toISOString(),
+            },
+          ],
+          maxScore: 0.8,
+        })
+      );
     }
 
     // Generate embedding for the search query
