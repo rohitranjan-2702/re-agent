@@ -45,7 +45,12 @@ export function ConversationSidebar({
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [searching, setSearching] = useState(false);
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<
+    {
+      conversationId: string;
+      matches: { content: string; timestamp: string }[];
+    }[]
+  >([]);
   const [isOpen, setIsOpen] = useState(false);
 
   // Fetch conversation history

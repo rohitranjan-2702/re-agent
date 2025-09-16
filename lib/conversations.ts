@@ -345,7 +345,7 @@ export function formatContextForPrompt(
     conversations: Array<{
       id: string;
       title: string;
-      messages: any[];
+      messages: { role: string; content: string }[];
       relevanceScore: number;
       timestamp: Date;
     }>;
@@ -371,10 +371,13 @@ export function formatContextForPrompt(
     // Include key messages from the conversation
     const messages = Array.isArray(conv.messages) ? conv.messages : [];
     const importantMessages = messages
-      .filter((msg: any) => msg.role === "user" || msg.role === "assistant")
+      .filter(
+        (msg: { role: string; content: string }) =>
+          msg.role === "user" || msg.role === "assistant"
+      )
       .slice(-4); // Last 4 messages to keep context manageable
 
-    importantMessages.forEach((msg: any) => {
+    importantMessages.forEach((msg: { role: string; content: string }) => {
       const role = msg.role === "user" ? "User" : "Assistant";
       const content =
         typeof msg.content === "string"

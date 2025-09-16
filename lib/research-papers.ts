@@ -71,22 +71,39 @@ export async function searchResearchPapers({
 
     const data = await response.json();
 
-    const papers: ResearchPaper[] = (data.data || []).map((paper: any) => ({
-      paperId: paper.paperId,
-      title: paper.title,
-      abstract: paper.abstract,
-      year: paper.year,
-      authors: (paper.authors || []).map((author: any) => ({
-        authorId: author.authorId,
-        name: author.name,
-      })),
-      venue: paper.venue,
-      citationCount: paper.citationCount || 0,
-      url: paper.url || generateSemanticScholarUrl(paper.paperId),
-      doi: paper.externalIds?.DOI || null,
-      s2FieldsOfStudy:
-        paper.s2FieldsOfStudy?.map((field: any) => field.category) || null,
-    }));
+    const papers: ResearchPaper[] = (data.data || []).map(
+      (paper: {
+        paperId: string;
+        title: string;
+        abstract: string;
+        year: number;
+        authors: { authorId: string; name: string }[];
+        venue: string;
+        citationCount: number;
+        url: string;
+        externalIds: { DOI: string };
+        s2FieldsOfStudy: { category: string }[];
+      }) => ({
+        paperId: paper.paperId,
+        title: paper.title,
+        abstract: paper.abstract,
+        year: paper.year,
+        authors: (paper.authors || []).map(
+          (author: { authorId: string; name: string }) => ({
+            authorId: author.authorId,
+            name: author.name,
+          })
+        ),
+        venue: paper.venue,
+        citationCount: paper.citationCount || 0,
+        url: paper.url || generateSemanticScholarUrl(paper.paperId),
+        doi: paper.externalIds?.DOI || null,
+        s2FieldsOfStudy:
+          paper.s2FieldsOfStudy?.map(
+            (field: { category: string }) => field.category
+          ) || null,
+      })
+    );
 
     return {
       papers,
@@ -135,16 +152,20 @@ export async function getPaperDetails(
       title: paper.title,
       abstract: paper.abstract,
       year: paper.year,
-      authors: (paper.authors || []).map((author: any) => ({
-        authorId: author.authorId,
-        name: author.name,
-      })),
+      authors: (paper.authors || []).map(
+        (author: { authorId: string; name: string }) => ({
+          authorId: author.authorId,
+          name: author.name,
+        })
+      ),
       venue: paper.venue,
       citationCount: paper.citationCount || 0,
       url: paper.url || generateSemanticScholarUrl(paper.paperId),
       doi: paper.externalIds?.DOI || null,
       s2FieldsOfStudy:
-        paper.s2FieldsOfStudy?.map((field: any) => field.category) || null,
+        paper.s2FieldsOfStudy?.map(
+          (field: { category: string }) => field.category
+        ) || null,
     };
   } catch (error) {
     console.error("Error getting paper details:", error);
