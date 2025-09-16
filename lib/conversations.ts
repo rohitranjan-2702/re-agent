@@ -314,9 +314,9 @@ export async function getConversationContext({
             id: conversation.id,
             title: conversation.title || "Untitled Conversation",
             messages: Array.isArray(conversation.messages)
-              ? conversation.messages
+              ? (conversation.messages as { role: string; content: string }[])
               : [],
-            relevanceScore: result.maxScore || 0,
+            relevanceScore: Number(result.maxScore || 0),
             timestamp: conversation.updatedAt,
           });
           totalTokenCount += estimatedTokens;
