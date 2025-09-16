@@ -17,7 +17,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { query, numPapers = 5, fields }: CitationRequest = await req.json();
+    const { query, numPapers = 5 }: CitationRequest = await req.json();
 
     if (!query || query.trim().length === 0) {
       return Response.json({ error: "Query is required" }, { status: 400 });

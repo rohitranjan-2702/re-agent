@@ -84,8 +84,8 @@ export async function POST(req: Request) {
     role: msg.role,
     content:
       msg.parts
-        ?.filter((part: any) => part.type === "text")
-        .map((part: any) => part.text)
+        ?.filter((part) => part.type === "text")
+        .map((part) => part.text)
         .join("") || "",
   }));
 

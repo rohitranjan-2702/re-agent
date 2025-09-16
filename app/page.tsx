@@ -8,14 +8,9 @@ import {
 import { Message, MessageContent } from "@/components/ai-elements/message";
 import {
   PromptInput,
-  PromptInputActionAddAttachments,
-  PromptInputActionMenu,
-  PromptInputActionMenuContent,
-  PromptInputActionMenuTrigger,
   PromptInputAttachment,
   PromptInputAttachments,
   PromptInputBody,
-  PromptInputButton,
   type PromptInputMessage,
   PromptInputModelSelect,
   PromptInputModelSelectContent,
@@ -33,12 +28,7 @@ import { useChat } from "@ai-sdk/react";
 import { useSession } from "next-auth/react";
 import { Response } from "@/components/ai-elements/response";
 import { ResponseWithCitations } from "@/components/ai-elements/response-with-citations";
-import {
-  CopyIcon,
-  GlobeIcon,
-  BookOpenIcon,
-  FlaskConicalIcon,
-} from "lucide-react";
+import { CopyIcon, FlaskConicalIcon } from "lucide-react";
 import {
   Source,
   Sources,
@@ -47,7 +37,6 @@ import {
 } from "@/components/ai-elements/sources";
 import {
   Reasoning,
-  ReasoningContent,
   ReasoningTrigger,
 } from "@/components/ai-elements/reasoning";
 import { ReasoningContentWithCitations } from "@/components/ai-elements/reasoning-with-citations";
@@ -94,7 +83,7 @@ const ChatBotDemo = () => {
         if (conversation && conversation.messages) {
           // Convert stored messages to UI format
           const uiMessages = conversation.messages.map(
-            (msg: any, index: number) => ({
+            (msg: { role: string; content: string }, index: number) => ({
               id: `${conversationId}-${index}`,
               role: msg.role,
               parts: [{ type: "text", text: msg.content }],
@@ -227,7 +216,7 @@ const ChatBotDemo = () => {
             <div className="text-center space-y-4 max-w-md flex flex-col items-center">
               <h2 className="text-xl font-medium">Welcome to Re Agent</h2>
               <p className="text-muted-foreground">
-                Please sign in to start chatting with our AI assistant. You'll
+                Please sign in to start chatting with our AI assistant. You will
                 have access to advanced AI models, web search capabilities, and
                 conversation history.
               </p>
